@@ -38,15 +38,15 @@ const Voicelogmode = async (oldState, newState, guildSetting) => {
 	if (newState.channelId) {
 		// User joined a voice channel
 		const welcomeMessages = [
-			"<a:ZiBot_Dragon:1323313537229262940> Chào **{user}** đợi mãi mới thấy ông vào **{channel}**!",
-			"<a:ZiBot_Dragon2:1323313583953547344> Yay, **{user}** đã tham gia **{channel}**",
+			"< Chào **{user}** đã đến với **{channel}**!",
+			"< Yay, **{user}** đã tham gia **{channel}**",
 		];
 		const randomWelcomeMsg = welcomeMessages[Math.floor(Math.random() * welcomeMessages.length)];
 		const message = randomWelcomeMsg.replace("{user}", userTag).replace("{channel}", channelName);
 		logChannel.send(`${message}\n-# Toggle voice log by using /voice log`);
 	} else if (oldState.channelId) {
 		// User left a voice channel
-		const leaveMessages = ["<:ZiBot_fuckzu:1323313619676696651> **{user}** đã rời khỏi **{channel}** rồi, buồn quá  (╥﹏╥)"];
+		const leaveMessages = ["**{user}** đã rời khỏi **{channel}** rồi, buồn quá  (╥﹏╥)"];
 		const randomLeaveMsg = leaveMessages[Math.floor(Math.random() * leaveMessages.length)];
 		const message = randomLeaveMsg.replace("{user}", userTag).replace("{channel}", channelName);
 		logChannel.send(`${message}\n-# Toggle voice log by using /voice log`).catch(() => {});

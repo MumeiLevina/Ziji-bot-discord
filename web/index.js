@@ -20,13 +20,13 @@ async function startServer() {
 			credentials: true,
 		}),
 	);
-	server.listen(process.env.SERVER_PORT || 2003, () => {
-		logger.info(`Server running on port ${process.env.SERVER_PORT || 2003}`);
+	server.listen(process.env.PORT || process.env.SERVER_PORT || 2003, () => {
+		logger.info(`Server running on port ${process.env.PORT || process.env.SERVER_PORT || 2003}`);
 	});
 
 	if (process.env.NGROK_AUTHTOKEN && process.env.NGROK_AUTHTOKEN !== "") {
 		const url = await ngrok.connect({
-			addr: process.env.SERVER_PORT || 2003,
+			addr: process.env.PORT || process.env.SERVER_PORT || 2003,
 			hostname: process.env.NGROK_DOMAIN,
 			authtoken: process.env.NGROK_AUTHTOKEN,
 		});
