@@ -21,9 +21,9 @@ sudo apt-get install -y nodejs
 echo "Tạo thư mục cho bot..."
 mkdir -p ~/ziji-bot
 
-# Clone repository vào thư mục đích
-echo "Clone repository..."
-git clone https://github.com/MumeiLevina/Ziji-bot-discord.git ~/ziji-bot
+# Clone repository vào thư mục đích (nhánh test)
+echo "Clone repository từ nhánh test..."
+git clone -b test https://github.com/MumeiLevina/Ziji-bot-discord.git ~/ziji-bot
 
 # Vào thư mục và cài đặt dependencies
 echo "Cài đặt dependencies..."
