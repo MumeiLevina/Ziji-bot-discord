@@ -48,7 +48,15 @@ module.exports.execute = async ({ interaction, lang }) => {
 
 	const context = options.getString("context");
 
-	const oldthread = interaction.channel.threads.cache.find((x) => x.name === `${client.user.username} TTS | ${user.username}`);
+	// Kiểm tra nếu interaction.channel.threads tồn tại trước khi truy cập cache
+	if (!interaction.channel.threads) {
+		return interaction.editReply({
+			content: "Không thể tạo thread trong kênh này, hãy thử trong kênh text khác",
+			ephemeral: true,
+		});
+	}
+	
+	const oldthread = interaction.channel.threads.cache?.find((x) => x.name === `${client.user.username} TTS | ${user.username}`);
 	await oldthread?.setArchived(true);
 	const thread = await interaction.channel.threads.create({
 		name: `${client.user.username} TTS | ${user.username}`,
