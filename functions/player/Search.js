@@ -166,28 +166,36 @@ async function handlePlayRequest(interaction, query, lang, options, queue) {
 			return await handleError(interaction, lang);
 		}
 
-		// Sử dụng player.play để đảm bảo phát ngay lập tức và theo đúng thứ tự
+		// Sử dụng player.play để phát playlist/track
 		const playResult = await player.play(interaction.member.voice.channel, res, {
 			nodeOptions: { 
 				...playerConfig, 
-				metadata: await getQueueMetadata(queue, interaction, options, lang),
-				// Đảm bảo queue xử lý theo thứ tự
-				shuffleMode: false,
-				repeatMode: 0 // Không lặp lại
+				metadata: await getQueueMetadata(queue, interaction, options, lang)
 			},
 			requestedBy: interaction.user,
 		});
 
-		// Nếu có queue và có nhiều tracks, đảm bảo chúng được thêm vào đúng thứ tự
-		if (playResult && res.tracks.length > 1) {
-			const currentQueue = useQueue(interaction.guild.id);
-			if (currentQueue) {
-				// Thêm các tracks còn lại vào queue theo đúng thứ tự
-				for (let i = 1; i < res.tracks.length; i++) {
-					currentQueue.addTrack(res.tracks[i]);
+		logger.debug(`Play result successful`);
+		
+		// Đợi một chút để queue được khởi tạo hoàn toàn
+		await new Promise(resolve => setTimeout(resolve, 1000));
+		
+		// Đảm bảo queue được tạo và bắt đầu phát
+		const currentQueue = useQueue(interaction.guild.id);
+		if (currentQueue) {
+			logger.debug(`Queue exists with ${currentQueue.tracks.data.length} tracks`);
+			
+			// Đảm bảo queue bắt đầu phát nếu chưa phát
+			if (!currentQueue.isPlaying() && currentQueue.tracks.data.length > 0) {
+				logger.debug("Starting queue playback");
+				try {
+					await currentQueue.node.play();
+				} catch (error) {
+					logger.error(`Error starting playback: ${error}`);
 				}
-				logger.debug(`Added ${res.tracks.length - 1} additional tracks to queue`);
 			}
+		} else {
+			logger.error("No queue found after play command");
 		}
 
 		await cleanUpInteraction(interaction, queue);
