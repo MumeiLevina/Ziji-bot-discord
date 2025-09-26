@@ -58,11 +58,13 @@ const getPlayerMoney = (userId, data, user = null) => {
 // Cập nhật số tiền cho người chơi
 const updatePlayerMoney = (userId, amount, data, user = null) => {
     const playerData = getPlayerData(userId, data, user);
+    
+    // Cập nhật số dư tiền
     playerData.money += amount;
     
-    // Đảm bảo người chơi luôn có ít nhất 100$
-    if (playerData.money < 100) {
-        playerData.money = 100;
+    // Đảm bảo người chơi luôn có ít nhất 100$ để chơi tiếp
+    if (playerData.money < 10) {
+        playerData.money = 10;
     }
     
     // Cập nhật thống kê

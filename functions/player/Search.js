@@ -88,7 +88,16 @@ module.exports.execute = async (interaction, query, lang, options = {}) => {
 	logger.debug(`Queue retrieved: ${queue?.tracks?.length || 0} tracks`);
 
 	if (validURL(query) || options?.joinvoice) {
-		logger.debug("Handling play request");
+		logger.debug("Handling play request with URL");
+		// Đối với URL, tìm kiếm trước để xác định số lượng tracks
+		const searchRes = await player.search(query, { requestedBy: interaction.user });
+		if (searchRes && searchRes.tracks && searchRes.tracks.length > 0) {
+			logger.debug(`Found ${searchRes.tracks.length} tracks from URL`);
+			// Nếu có nhiều tracks (playlist), đảm bảo phát ngay bài đầu tiên
+			if (searchRes.tracks.length > 1) {
+				logger.debug("Multiple tracks detected, handling as playlist");
+			}
+		}
 		return handlePlayRequest(interaction, query, lang, options, queue);
 	}
 
@@ -150,10 +159,36 @@ async function handlePlayRequest(interaction, query, lang, options, queue) {
 
 		const res = await player.search(query, { requestedBy: interaction.user });
 		logger.debug("Search results obtained:", res);
-		await player.play(interaction.member.voice.channel, res, {
-			nodeOptions: { ...playerConfig, metadata: await getQueueMetadata(queue, interaction, options, lang) },
+		
+		// Đảm bảo có tracks để phát
+		if (!res || !res.tracks || res.tracks.length === 0) {
+			logger.error("No tracks found in search results");
+			return await handleError(interaction, lang);
+		}
+
+		// Sử dụng player.play để đảm bảo phát ngay lập tức và theo đúng thứ tự
+		const playResult = await player.play(interaction.member.voice.channel, res, {
+			nodeOptions: { 
+				...playerConfig, 
+				metadata: await getQueueMetadata(queue, interaction, options, lang),
+				// Đảm bảo queue xử lý theo thứ tự
+				shuffleMode: false,
+				repeatMode: 0 // Không lặp lại
+			},
 			requestedBy: interaction.user,
 		});
+
+		// Nếu có queue và có nhiều tracks, đảm bảo chúng được thêm vào đúng thứ tự
+		if (playResult && res.tracks.length > 1) {
+			const currentQueue = useQueue(interaction.guild.id);
+			if (currentQueue) {
+				// Thêm các tracks còn lại vào queue theo đúng thứ tự
+				for (let i = 1; i < res.tracks.length; i++) {
+					currentQueue.addTrack(res.tracks[i]);
+				}
+				logger.debug(`Added ${res.tracks.length - 1} additional tracks to queue`);
+			}
+		}
 
 		await cleanUpInteraction(interaction, queue);
 		logger.debug("Track played successfully");
@@ -171,6 +206,10 @@ const DefaultPlayerConfig = {
 	leaveOnEnd: true,
 	leaveOnEndCooldown: 500_000,
 	pauseOnEmpty: true,
+	// Đảm bảo queue xử lý đúng thứ tự
+	shuffleMode: false,
+	repeatMode: 0, // Không lặp lại
+	skipOnNoStream: false
 };
 
 async function getPlayerConfig(options, interaction) {

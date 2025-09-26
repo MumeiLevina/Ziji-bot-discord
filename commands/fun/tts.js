@@ -47,8 +47,6 @@ module.exports.execute = async ({ interaction, lang }) => {
 	}
 
 	const context = options.getString("context");
-
-	// Kiểm tra nếu interaction.channel.threads tồn tại trước khi truy cập cache
 	if (!interaction.channel.threads) {
 		return interaction.editReply({
 			content: "Không thể tạo thread trong kênh này, hãy thử trong kênh text khác",

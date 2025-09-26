@@ -94,9 +94,11 @@ module.exports.execute = async ({ interaction, lang }) => {
         
         // Nếu người dùng hiện tại không nằm trong top 10, thêm thông tin của họ
         if (userRank > 10 && userData) {
+            let userInfo = `#${userRank}: **${userData.username}** - ${userData.money}$ (W: ${userData.wins || 0}, L: ${userData.losses || 0}${userData.blackjacks ? `, BJ: ${userData.blackjacks}` : ''})`;
+            
             embed.addFields({
                 name: 'Vị Trí Của Bạn',
-                value: `#${userRank}: **${userData.username}** - ${userData.money}$ (W: ${userData.wins || 0}, L: ${userData.losses || 0}${userData.blackjacks ? `, BJ: ${userData.blackjacks}` : ''})`
+                value: userInfo
             });
         }
         

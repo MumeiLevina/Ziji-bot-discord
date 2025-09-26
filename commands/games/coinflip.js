@@ -20,8 +20,7 @@ module.exports.data = {
 	integration_types: [0],
 	contexts: [0, 1],
 };
-
-/**
+/** /
  * @param { object } command - object command
  * @param { import("discord.js").CommandInteraction } command.interaction - interaction
  * @param { import("../../lang/vi.js") } command.lang - language
