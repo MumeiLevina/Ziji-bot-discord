@@ -150,10 +150,40 @@ async function handlePlayRequest(interaction, query, lang, options, queue) {
 
 		const res = await player.search(query, { requestedBy: interaction.user });
 		logger.debug("Search results obtained:", res);
+        
+        // Đảm bảo có tracks để phát
+        if (!res || !res.tracks || res.tracks.length === 0) {
+            logger.error("No tracks found in search results");
+            return await handleError(interaction, lang);
+        }
+        
 		await player.play(interaction.member.voice.channel, res, {
 			nodeOptions: { ...playerConfig, metadata: await getQueueMetadata(queue, interaction, options, lang) },
 			requestedBy: interaction.user,
 		});
+        
+        logger.debug(`Play result successful`);
+        
+        // Đợi một chút để queue được khởi tạo hoàn toàn
+        await new Promise(resolve => setTimeout(resolve, 1000));
+        
+        // Đảm bảo queue được tạo và bắt đầu phát
+        const currentQueue = useQueue(interaction.guild.id);
+        if (currentQueue) {
+            logger.debug(`Queue exists with ${currentQueue.tracks.data.length} tracks`);
+            
+            // Đảm bảo queue bắt đầu phát nếu chưa phát
+            if (!currentQueue.isPlaying() && currentQueue.tracks.data.length > 0) {
+                logger.debug("Starting queue playback");
+                try {
+                    await currentQueue.node.play();
+                } catch (error) {
+                    logger.error(`Error starting playback: ${error}`);
+                }
+            }
+        } else {
+            logger.error("No queue found after play command");
+        }
 
 		await cleanUpInteraction(interaction, queue);
 		logger.debug("Track played successfully");
@@ -171,6 +201,10 @@ const DefaultPlayerConfig = {
 	leaveOnEnd: true,
 	leaveOnEndCooldown: 500_000,
 	pauseOnEmpty: true,
+    // Đảm bảo queue xử lý đúng thứ tự
+    shuffleMode: false,
+    repeatMode: 0, // Không lặp lại
+    skipOnNoStream: false
 };
 
 async function getPlayerConfig(options, interaction) {
