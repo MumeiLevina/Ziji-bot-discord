@@ -157,8 +157,20 @@ async function handlePlayRequest(interaction, query, lang, options, queue) {
             return await handleError(interaction, lang);
         }
         
+        // Thông báo đang xử lý playlist nếu có nhiều track
+        if (res.tracks.length > 1 && res.playlist) {
+            await interaction.editReply({ 
+                content: `⏳ Đang xử lý playlist **${res.playlist.title}** với ${res.tracks.length} bài hát...` 
+            });
+        }
+        
 		await player.play(interaction.member.voice.channel, res, {
-			nodeOptions: { ...playerConfig, metadata: await getQueueMetadata(queue, interaction, options, lang) },
+			nodeOptions: { 
+                ...playerConfig, 
+                metadata: await getQueueMetadata(queue, interaction, options, lang),
+                bufferingTimeout: 30000, // Tăng timeout để giảm thiểu lỗi khi tải các bài hát
+                skipOnNoStream: true, // Đảm bảo bỏ qua nếu không thể stream
+            },
 			requestedBy: interaction.user,
 		});
         
@@ -204,7 +216,7 @@ const DefaultPlayerConfig = {
     // Đảm bảo queue xử lý đúng thứ tự
     shuffleMode: false,
     repeatMode: 0, // Không lặp lại
-    skipOnNoStream: false
+    skipOnNoStream: true // Chỉ bỏ qua khi không thể stream, ngược lại thử lại
 };
 
 async function getPlayerConfig(options, interaction) {

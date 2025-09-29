@@ -18,9 +18,15 @@ module.exports = {
             }
         }
         
+        const isPlaylist = tracks[0]?.playlist;
+        const trackCount = tracks.length;
+        const title = tracks[0]?.playlist?.title || "Danh sách phát";
+        const url = tracks[0]?.playlist?.url || `https://soundcloud.com`;
+        
 		const embed = new EmbedBuilder()
 			.setDescription(
-				`Đã thêm danh sách phát: [${tracks[0]?.playlist?.title || "Không có tiêu đề"}](${tracks[0]?.playlist?.url || `https://soundcloud.com`}) - ${tracks.length} bài hát`,
+				`Đã thêm danh sách phát: [${title}](${url}) - ${trackCount} bài hát\n` +
+                `Các bài hát đã được thêm vào hàng đợi và sẽ phát lần lượt.`
 			)
 			.setThumbnail(tracks[0]?.playlist?.thumbnail || null)
 			.setColor("Random")
