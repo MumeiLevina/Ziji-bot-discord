@@ -18,13 +18,13 @@ module.exports.execute = async ({ interaction, lang }) => {
 	if (!queue) return interaction.message.edit({ components: [] }).catch((e) => {});
 	// Kiểm tra xem có khóa player không
 	if (queue.metadata.LockStatus && queue.metadata.requestedBy?.id !== interaction.user?.id)
-		return interaction.followUp({ content: lang.until.noPermission, ephemeral: true });
+		return interaction.followUp({ content: lang.until.noPermission, flags: 64 }); // MessageFlags.Ephemeral
 
 	// Kiểm tra xem người dùng có ở cùng voice channel với bot không
 	const botVoiceChannel = interaction.guild.members.me.voice.channel;
 	const userVoiceChannel = interaction.member.voice.channel;
 	if (!botVoiceChannel || botVoiceChannel.id !== userVoiceChannel?.id)
-		return interaction.followUp({ content: lang.music.NOvoiceMe, ephemeral: true });
+		return interaction.followUp({ content: lang.music.NOvoiceMe, flags: 64 }); // MessageFlags.Ephemeral
 
 	interaction.message.edit({ components: [] }).catch((e) => {});
 	queue.delete();

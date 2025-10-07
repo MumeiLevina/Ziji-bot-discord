@@ -81,9 +81,15 @@ module.exports.execute = async (interaction, query, lang, options = {}) => {
 	if (!isBotInSameVoiceChannel(guild, voiceChannel, interaction, lang)) return;
 	if (!hasVoiceChannelPermissions(voiceChannel, client, interaction, lang)) return;
 
-	await interaction.deferReply({ withResponse: true }).catch(() => {
-		logger.warn("Failed to defer reply");
-	});
+	// Sửa lại cách defer reply - bỏ withResponse vì không tồn tại
+	try {
+		await interaction.deferReply();
+		logger.debug("Deferred reply successfully");
+	} catch (error) {
+		logger.error(`Failed to defer reply: ${error.message}`);
+		return;
+	}
+	
 	const queue = useQueue(guild.id);
 	logger.debug(`Queue retrieved: ${queue?.tracks?.length || 0} tracks`);
 
@@ -150,52 +156,10 @@ async function handlePlayRequest(interaction, query, lang, options, queue) {
 
 		const res = await player.search(query, { requestedBy: interaction.user });
 		logger.debug("Search results obtained:", res);
-        
-        // Đảm bảo có tracks để phát
-        if (!res || !res.tracks || res.tracks.length === 0) {
-            logger.error("No tracks found in search results");
-            return await handleError(interaction, lang);
-        }
-        
-        // Thông báo đang xử lý playlist nếu có nhiều track
-        if (res.tracks.length > 1 && res.playlist) {
-            await interaction.editReply({ 
-                content: `⏳ Đang xử lý playlist **${res.playlist.title}** với ${res.tracks.length} bài hát...` 
-            });
-        }
-        
 		await player.play(interaction.member.voice.channel, res, {
-			nodeOptions: { 
-                ...playerConfig, 
-                metadata: await getQueueMetadata(queue, interaction, options, lang),
-                bufferingTimeout: 30000, // Tăng timeout để giảm thiểu lỗi khi tải các bài hát
-                skipOnNoStream: true, // Đảm bảo bỏ qua nếu không thể stream
-            },
+			nodeOptions: { ...playerConfig, metadata: await getQueueMetadata(queue, interaction, options, lang) },
 			requestedBy: interaction.user,
 		});
-        
-        logger.debug(`Play result successful`);
-        
-        // Đợi một chút để queue được khởi tạo hoàn toàn
-        await new Promise(resolve => setTimeout(resolve, 1000));
-        
-        // Đảm bảo queue được tạo và bắt đầu phát
-        const currentQueue = useQueue(interaction.guild.id);
-        if (currentQueue) {
-            logger.debug(`Queue exists with ${currentQueue.tracks.data.length} tracks`);
-            
-            // Đảm bảo queue bắt đầu phát nếu chưa phát
-            if (!currentQueue.isPlaying() && currentQueue.tracks.data.length > 0) {
-                logger.debug("Starting queue playback");
-                try {
-                    await currentQueue.node.play();
-                } catch (error) {
-                    logger.error(`Error starting playback: ${error}`);
-                }
-            }
-        } else {
-            logger.error("No queue found after play command");
-        }
 
 		await cleanUpInteraction(interaction, queue);
 		logger.debug("Track played successfully");
@@ -213,10 +177,6 @@ const DefaultPlayerConfig = {
 	leaveOnEnd: true,
 	leaveOnEndCooldown: 500_000,
 	pauseOnEmpty: true,
-    // Đảm bảo queue xử lý đúng thứ tự
-    shuffleMode: false,
-    repeatMode: 0, // Không lặp lại
-    skipOnNoStream: true // Chỉ bỏ qua khi không thể stream, ngược lại thử lại
 };
 
 async function getPlayerConfig(options, interaction) {
@@ -341,24 +301,32 @@ async function cleanUpInteraction(interaction, queue) {
 
 async function handleError(interaction, lang) {
 	logger.debug("Starting handleError");
-	const response = { content: lang?.music?.NOres ?? "❌ | Không tìm thấy bài hát", ephemeral: true };
+	const response = { 
+		content: lang?.music?.NOres ?? "❌ | Không tìm thấy bài hát", 
+		flags: 64 // MessageFlags.Ephemeral
+	};
+	
 	if (interaction.replied || interaction.deferred) {
 		logger.debug("Interaction already replied or deferred");
 		try {
 			await interaction.editReply(response);
 			logger.debug("Edited interaction reply successfully");
-		} catch {
-			logger.warn("Failed to edit interaction reply, fetching reply");
-			const meess = await interaction.fetchReply();
-			await meess.edit(response).catch(() => {
-				logger.error("Failed to edit fetched reply");
-			});
+		} catch (error) {
+			logger.warn(`Failed to edit interaction reply: ${error.message}`);
+			try {
+				const meess = await interaction.fetchReply();
+				await meess.edit({ content: response.content });
+			} catch (fetchError) {
+				logger.error(`Failed to edit fetched reply: ${fetchError.message}`);
+			}
 		}
 	} else {
 		logger.debug("Replying to interaction");
-		await interaction.reply(response).catch(() => {
-			logger.error("Failed to reply to interaction");
-		});
+		try {
+			await interaction.reply(response);
+		} catch (error) {
+			logger.error(`Failed to reply to interaction: ${error.message}`);
+		}
 	}
 	logger.debug("Exiting handleError");
 	return;
