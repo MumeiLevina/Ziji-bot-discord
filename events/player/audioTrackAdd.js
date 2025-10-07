@@ -6,9 +6,7 @@ module.exports = {
 	type: "Player",
 	execute: async (queue, track) => {
 		if (track?.queryType === "tts") return;
-        
-        // Nếu queue không đang phát và có tracks, bắt đầu phát
-        if (!queue.isPlaying() && queue.tracks.data.length > 0) {
+        if (!queue.isPlaying() && queue.tracks.data.length == 0) {
             console.log("Queue not playing, starting playback...");
             try {
                 await queue.node.play();
@@ -16,7 +14,6 @@ module.exports = {
                 console.error("Error starting playback:", error);
             }
         }
-        
 		const embed = new EmbedBuilder()
 			.setDescription(`Đã thêm bài hát: [${track.author} - ${track?.title}](${track?.url}) \`[${track?.duration}]\``)
 			.setThumbnail(track?.thumbnail)

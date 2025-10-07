@@ -1,28 +1,22 @@
 const { EmbedBuilder } = require("discord.js");
 const { GuildQueueEvent } = require("discord-player");
-
 module.exports = {
 	name: GuildQueueEvent.AudioTracksAdd,
 	type: "Player",
 	execute: async (queue, tracks) => {
 		if (!tracks || tracks.length === 0) return;
 		if (tracks[0]?.queryType === "tts") return;
-        
-        // Nếu queue không đang phát và có tracks, bắt đầu phát
-        if (!queue.isPlaying() && queue.tracks.data.length > 0) {
+        if (!queue.isPlaying() && queue.tracks.data.length == 0) {
             console.log("Queue not playing, starting playback...");
             try {
                 await queue.node.play();
             } catch (error) {
                 console.error("Error starting playback:", error);
-            }
-        }
-        
+            }}
         const isPlaylist = tracks[0]?.playlist;
         const trackCount = tracks.length;
         const title = tracks[0]?.playlist?.title || "Danh sách phát";
-        const url = tracks[0]?.playlist?.url || `https://soundcloud.com`;
-        
+        const url = tracks[0]?.playlist?.url || `https://soundcloud.com`|| `https://www.youtube.com/playlist?list=${tracks[0]?.playlist?.id}` || "N/A";
 		const embed = new EmbedBuilder()
 			.setDescription(
 				`Đã thêm danh sách phát: [${title}](${url}) - ${trackCount} bài hát\n` +

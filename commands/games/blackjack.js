@@ -169,7 +169,7 @@ module.exports.execute = async ({ interaction, lang }) => {
 	// Gửi tin nhắn mời
 	const inviteEmbed = new EmbedBuilder()
 		.setTitle("Mời chơi Blackjack")
-		.setDescription(`${interaction.user} đã mời bạn chơi Blackjack!\nThời gian chờ: 20 giây`)
+		.setDescription(`${interaction.user} đã mời bạn chơi Blackjack!\nThời gian chờ: 10 giây`)
 		.setColor("#5865F2")
 		.addFields(
 			{ name: "Người chơi đã tham gia", value: `${interaction.user.username}`, inline: true },
@@ -190,7 +190,7 @@ module.exports.execute = async ({ interaction, lang }) => {
 	// Tạo collector cho các nút tham gia/từ chối
 	const inviteCollector = inviteReply.createMessageComponentCollector({
 		componentType: ComponentType.Button,
-		time: 20000, // 20 giây
+		time: 10000, // 20 giây
 	});
 	
 	// Xử lý phản hồi từ người chơi được mời
