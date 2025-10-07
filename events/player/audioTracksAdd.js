@@ -7,6 +7,10 @@ module.exports = {
 	execute: async (queue, track) => {
 		if (track?.queryType === "tts") return;
 		
+		// Kiểm tra nếu queue chưa phát và chưa có current track
+		// Điều này có nghĩa là đây là playlist đầu tiên cần được phát
+		const shouldAutoPlay = !queue.currentTrack && !queue.isPlaying();
+		
 		const embed = new EmbedBuilder()
 			.setDescription(
 				`Đã thêm danh sách phát: [${track[0]?.playlist?.title || "Không có tiêu đề"}](${track[0]?.playlist?.url || `https://soundcloud.com`})`,
@@ -22,5 +26,20 @@ module.exports = {
 		setTimeout(function () {
 			replied?.delete().catch((e) => {});
 		}, 5000);
+		
+		// Tự động phát nếu cần (chỉ khi là playlist đầu tiên)
+		if (shouldAutoPlay) {
+			console.log("Auto-playing first playlist in queue...");
+			// Đợi một chút để tracks được thêm vào queue hoàn toàn
+			setTimeout(async () => {
+				try {
+					if (!queue.isPlaying() && !queue.currentTrack) {
+						await queue.node.play();
+					}
+				} catch (error) {
+					console.error("Error auto-playing playlist:", error);
+				}
+			}, 500);
+		}
 	},
 };
