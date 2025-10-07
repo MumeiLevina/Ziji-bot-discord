@@ -4,23 +4,26 @@ const { GuildQueueEvent } = require("discord-player");
 module.exports = {
 	name: GuildQueueEvent.AudioTracksAdd,
 	type: "Player",
-	execute: async (queue, track) => {
-		if (track?.queryType === "tts") return;
+	execute: async (queue, tracks) => {
+		// tracks là một mảng, không phải object đơn lẻ
+		if (!tracks || tracks.length === 0) return;
+		if (tracks[0]?.queryType === "tts") return;
 		
 		// Kiểm tra nếu queue chưa phát và chưa có current track
 		// Điều này có nghĩa là đây là playlist đầu tiên cần được phát
 		const shouldAutoPlay = !queue.currentTrack && !queue.isPlaying();
 		
+		const firstTrack = tracks[0];
 		const embed = new EmbedBuilder()
 			.setDescription(
-				`Đã thêm danh sách phát: [${track[0]?.playlist?.title || "Không có tiêu đề"}](${track[0]?.playlist?.url || `https://soundcloud.com`})`,
+				`Đã thêm danh sách phát: [${firstTrack?.playlist?.title || "Không có tiêu đề"}](${firstTrack?.playlist?.url || `https://soundcloud.com`}) - ${tracks.length} bài hát`,
 			)
-			.setThumbnail(track[0]?.playlist?.thumbnail || null)
+			.setThumbnail(firstTrack?.playlist?.thumbnail || null)
 			.setColor("Random")
 			.setTimestamp()
 			.setFooter({
-				text: `by: ${track?.requestedBy?.username}`,
-				iconURL: track?.requestedBy?.displayAvatarURL({ size: 1024 }) ?? null,
+				text: `by: ${firstTrack?.requestedBy?.username}`,
+				iconURL: firstTrack?.requestedBy?.displayAvatarURL({ size: 1024 }) ?? null,
 			});
 		const replied = await queue.metadata?.channel?.send({ embeds: [embed], fetchReply: true }).catch((e) => {});
 		setTimeout(function () {
